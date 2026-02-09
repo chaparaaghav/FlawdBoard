@@ -1891,11 +1891,16 @@
             let expense = 0;
 
             monthTransactions.forEach(t => {
-                // Determine type: check transaction.type first, then category.type as fallback
+                // Determine type: CATEGORY type is source of truth for income categories
+                // This ensures income categories ALWAYS count as income regardless of transaction.type
                 const categoryData = CATEGORIES[t.category];
-                const txType = t.type || (categoryData && categoryData.type) || 'expense';
+                const categoryType = categoryData ? categoryData.type : null;
 
-                if (txType === 'income') income += t.amount;
+                // If category is explicitly marked as income, it's income
+                // Otherwise, check transaction.type, defaulting to expense
+                const isIncome = categoryType === 'income' || (categoryType === null && t.type === 'income');
+
+                if (isIncome) income += t.amount;
                 else expense += t.amount;
             });
 
@@ -2013,9 +2018,9 @@
             tbody.innerHTML = filtered.map((t, index) => {
                 const catData = CATEGORIES[t.category];
                 const catColor = catData ? catData.color : '#888';
-                // Infer type from category if not set on transaction
-                const txType = t.type || (catData && catData.type) || 'expense';
-                const isIncome = txType === 'income';
+                // Category type is source of truth for income detection
+                const categoryType = catData ? catData.type : null;
+                const isIncome = categoryType === 'income' || (categoryType === null && t.type === 'income');
                 const sign = isIncome ? '+' : '-';
                 const amountColor = isIncome ? 'text-emerald-400' : 'text-brand-text';
 
@@ -2086,13 +2091,14 @@
                     const dayTx = monthTx.filter(t => t.date === dayStr);
 
                     const dayIncome = dayTx.filter(t => {
-                        const tType = t.type || CATEGORIES[t.category]?.type || 'expense';
-                        return tType === 'income';
+                        const catType = CATEGORIES[t.category]?.type;
+                        return catType === 'income' || (catType === null && t.type === 'income');
                     }).reduce((sum, t) => sum + t.amount, 0);
 
                     const dayExpense = dayTx.filter(t => {
-                        const tType = t.type || CATEGORIES[t.category]?.type || 'expense';
-                        return tType !== 'income';
+                        const catType = CATEGORIES[t.category]?.type;
+                        const isIncome = catType === 'income' || (catType === null && t.type === 'income');
+                        return !isIncome;
                     }).reduce((sum, t) => sum + t.amount, 0);
 
                     runningBalance += (dayIncome - dayExpense);
@@ -2105,8 +2111,9 @@
 
                     const total = dayTx
                         .filter(t => {
-                            const tType = t.type || CATEGORIES[t.category]?.type || 'expense';
-                            return type === 'income' ? tType === 'income' : tType !== 'income';
+                            const catType = CATEGORIES[t.category]?.type;
+                            const isIncomeT = catType === 'income' || (catType === null && t.type === 'income');
+                            return type === 'income' ? isIncomeT : !isIncomeT;
                         })
                         .reduce((sum, t) => sum + t.amount, 0);
 
