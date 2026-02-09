@@ -707,6 +707,22 @@
             </div>
         </section>
 
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 animate-slide-up" style="animation-delay: 0.1s;">
+            <div class="glass-card p-4 rounded-2xl border-l-4 border-blue-500">
+                <p class="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Total Balance</p>
+                <h3 class="text-2xl font-bold text-white" id="totalBalance">₹0</h3>
+            </div>
+            <div class="glass-card p-4 rounded-2xl border-l-4 border-emerald-500">
+                <p class="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Total Income</p>
+                <h3 class="text-2xl font-bold text-emerald-400" id="totalIncome">₹0</h3>
+            </div>
+            <div class="glass-card p-4 rounded-2xl border-l-4 border-rose-500">
+                <p class="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Total Expenses</p>
+                <h3 class="text-2xl font-bold text-rose-400" id="totalExpenseSummary">₹0</h3>
+            </div>
+        </div>
+
         <!-- Charts Section -->
         <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <!-- Donut Chart -->
@@ -796,6 +812,18 @@
                 </button>
             </div>
             <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" class="space-y-4">
+                <div class="flex gap-2 mb-4 bg-black/20 p-1 rounded-xl">
+                    <button type="button" id="txTypeExpense" onclick="setTransactionType('expense')"
+                        class="flex-1 py-2 text-sm font-medium rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/50 transition-all">
+                        Expense
+                    </button>
+                    <button type="button" id="txTypeIncome" onclick="setTransactionType('income')"
+                        class="flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition-all">
+                        Income
+                    </button>
+                </div>
+                <input type="hidden" id="txType" value="expense">
+
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Amount (₹)</label>
                     <input type="number" id="txAmount" step="0.01" min="0.01" required
@@ -937,6 +965,19 @@
                         <button type="button" onclick="resetCategoryForm()"
                             class="text-xs text-brand-primary hover:text-white">Reset</button>
                     </div>
+
+                    <div class="flex gap-2 mb-4 bg-black/20 p-1 rounded-xl">
+                        <button type="button" id="catTypeExpense" onclick="setCategoryType('expense')"
+                            class="flex-1 py-2 text-sm font-medium rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/50 transition-all">
+                            Expense
+                        </button>
+                        <button type="button" id="catTypeIncome" onclick="setCategoryType('income')"
+                            class="flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition-all">
+                            Income
+                        </button>
+                    </div>
+                    <input type="hidden" id="catType" value="expense">
+
                     <input type="hidden" id="originalCatName">
                     <div class="space-y-4">
                         <div>
@@ -1117,7 +1158,35 @@
             'Healthcare': {
                 color: '#f87171',
                 gradient: 'from-red-500 to-rose-500',
-                subCategories: ['Doctor', 'Pharmacy', 'Dental', 'Vision', 'Fitness']
+                subCategories: ['Doctor', 'Pharmacy', 'Dental', 'Vision', 'Fitness'],
+                type: 'expense'
+            }
+        };
+
+        const DEFAULT_INCOME_CATEGORIES = {
+            'Salary': {
+                color: '#22c55e',
+                gradient: 'from-green-500 to-emerald-500',
+                subCategories: ['Full-time', 'Freelance', 'Bonus'],
+                type: 'income'
+            },
+            'Investments': {
+                color: '#06b6d4',
+                gradient: 'from-cyan-500 to-blue-500',
+                subCategories: ['Dividends', 'Interest', 'Capital Gains'],
+                type: 'income'
+            },
+            'Gifts': {
+                color: '#d946ef',
+                gradient: 'from-fuchsia-500 to-pink-500',
+                subCategories: ['Birthday', 'Holiday'],
+                type: 'income'
+            },
+            'Other Income': {
+                color: '#a8a29e',
+                gradient: 'from-stone-500 to-gray-500',
+                subCategories: ['Refunds', 'Sales'],
+                type: 'income'
             }
         };
 
@@ -1264,8 +1333,14 @@
 
             if (savedCategories) {
                 CATEGORIES = JSON.parse(savedCategories);
+                // Migration: Ensure type exists
+                Object.values(CATEGORIES).forEach(c => {
+                    if (!c.type) c.type = 'expense';
+                });
             } else {
                 CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+                // Merge Income Defaults
+                Object.assign(CATEGORIES, JSON.parse(JSON.stringify(DEFAULT_INCOME_CATEGORIES)));
                 saveCategories();
             }
 
@@ -1575,21 +1650,58 @@
         function handleTransactionSubmit(e) {
             e.preventDefault();
 
+            const type = document.getElementById('txType').value;
+            const category = document.getElementById('txCategory').value;
+
             const newTransaction = {
                 id: Date.now(),
                 amount: parseFloat(document.getElementById('txAmount').value),
                 date: document.getElementById('txDate').value,
                 account: document.getElementById('txAccount').value,
-                category: document.getElementById('txCategory').value,
-                subCategory: document.getElementById('txSubCategory').value
+                category: category,
+                subCategory: document.getElementById('txSubCategory').value,
+                type: type || 'expense',
+                desc: category // Fallback description
             };
 
             transactions.push(newTransaction);
             saveData();
-            renderAll();
+            renderAll(); // Will update totals
             closeModal('transactionModal');
             document.getElementById('transactionForm').reset();
+
+            // Reset state
+            setTransactionType('expense');
             setDefaultDate();
+        }
+
+        function setTransactionType(type) {
+            document.getElementById('txType').value = type;
+            const expenseBtn = document.getElementById('txTypeExpense');
+            const incomeBtn = document.getElementById('txTypeIncome');
+
+            if (type === 'expense') {
+                expenseBtn.className = "flex-1 py-2 text-sm font-medium rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/50 transition-all";
+                incomeBtn.className = "flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition-all";
+            } else {
+                incomeBtn.className = "flex-1 py-2 text-sm font-medium rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 transition-all";
+                expenseBtn.className = "flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition-all";
+            }
+            populateCategorySelects();
+        }
+
+        function setCategoryType(type) {
+            document.getElementById('catType').value = type;
+            const expenseBtn = document.getElementById('catTypeExpense');
+            const incomeBtn = document.getElementById('catTypeIncome');
+
+            if (type === 'expense') {
+                expenseBtn.className = "flex-1 py-2 text-sm font-medium rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/50 transition-all";
+                incomeBtn.className = "flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition-all";
+            } else {
+                incomeBtn.className = "flex-1 py-2 text-sm font-medium rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 transition-all";
+                expenseBtn.className = "flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition-all";
+            }
         }
 
         function deleteTransaction(id) {
@@ -1652,10 +1764,49 @@
 
         // Render All Components
         function renderAll() {
+            const month = document.getElementById('monthSelect').value;
+            const monthTransactions = transactions.filter(t => t.date.substring(0, 7) === month);
+
+            // Calculate Totals
+            let income = 0;
+            let expense = 0;
+
+            monthTransactions.forEach(t => {
+                if (t.type === 'income') income += t.amount;
+                else expense += t.amount; // Assume expense if undefined
+            });
+
+            // Update Summary Cards
+            updateSummaryCards(income, expense);
+
+            // Render Components
+            // Note: renderBudgetCards and updateCharts should ideally only show EXPENSES
+            // logic inside them needs to be aware or we pass filtered data. 
+            // Existing functions use GLOBAL variables or internal filtering.
+            // Let's pass filtering implicitly by reliance on Global `selectedMonth`. 
+            // BUT we need to update them to filter out income usually.
+
             renderBudgetCards();
             renderTransactions();
             updateCharts();
             checkOverspending();
+        }
+
+        function updateSummaryCards(totalIncome, totalExpense) {
+            const balance = totalIncome - totalExpense;
+
+            // Helper to animate numbers
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = `₹${val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+            };
+
+            setVal('totalBalance', balance);
+            setVal('totalIncome', totalIncome);
+            setVal('totalExpenseSummary', totalExpense);
+
+            // Update Donut Center
+            setVal('donutCenter', totalExpense);
         }
 
         // Budget Cards
@@ -1723,20 +1874,27 @@
             }
 
             noData.classList.add('hidden');
-            tbody.innerHTML = filtered.map((t, index) => `
+            tbody.innerHTML = filtered.map((t, index) => {
+                const isIncome = t.type === 'income';
+                const sign = isIncome ? '+' : '-';
+                const amountColor = isIncome ? 'text-emerald-400' : 'text-brand-text';
+                const catData = CATEGORIES[t.category];
+                const catColor = catData ? catData.color : '#888';
+
+                return `
                 <tr class="border-b border-white/5 table-row-hover animate-fade-in stagger-${Math.min(index + 1, 6)}">
                     <td class="py-4 px-4 text-brand-text/80">${new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
                     <td class="py-4 px-4">
                         <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 rounded-full" style="background: ${CATEGORIES[t.category]?.color || '#888'}"></div>
+                            <div class="w-2 h-2 rounded-full" style="background: ${catColor}"></div>
                             <span class="text-brand-text">${t.category}</span>
                         </div>
                     </td>
-                    <td class="py-4 px-4 text-brand-text/60">${t.subCategory}</td>
+                    <td class="py-4 px-4 text-brand-text/60">${t.subCategory || ''}</td>
                     <td class="py-4 px-4">
                         <span class="px-2 py-1 rounded-lg text-xs font-medium bg-white/10 text-brand-text/80">${t.account}</span>
                     </td>
-                    <td class="py-4 px-4 text-right font-medium text-brand-text">₹${t.amount.toFixed(2)}</td>
+                    <td class="py-4 px-4 text-right font-medium ${amountColor}">${sign}₹${t.amount.toFixed(2)}</td>
                     <td class="py-4 px-4 text-center">
                         <button onclick="deleteTransaction(${t.id})" class="text-brand-text/50 hover:text-red-400 transition-colors delete-shake">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1745,7 +1903,7 @@
                         </button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         // Charts
