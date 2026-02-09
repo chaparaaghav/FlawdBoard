@@ -1,0 +1,25 @@
+## Typography Sumary 
+The Trifect brand relies on the Inter font family to maintain a modern, tech-forward, and clean aesthetic. It is divided into two specific use cases: 
+
+1. Headings Font: Inter Display 
+
+Weights to Use: Regular, Medium, and Bold 
+
+Purpose: Use this for primary titles, section headers, and high-level callouts to give the UI a refined, professional look. 
+
+2. Body Text Font: Inter 
+Weights to Use: Regular and Bold 
+
+Purpose: Use this for all standard interface text, descriptions, and functional labels to ensure maximum legibility. 
+
+## UI & App Design Requirements 
+When you're creating any kind of UI or app components, these guidelines mandate the following "must-dos": 
+
+Maintain Visual Balance: Use the horizontal logo version (text next to the icon) for standard website headers and documents. Use the vertical version for space-constrained areas like app icons or social profiles. 
+
+Color Contrast & Accessibility: All text and logo elements must have sufficient contrast against the background. 
+
+Color Palette:
+Primary: Red (#b11f29): Use for highlights, key interface elements, and the logo.
+Background: Dark (#171717): Use as the primary background color to keep layouts clean
+Text: White (#dbd6cb): Use for all text in the interface
