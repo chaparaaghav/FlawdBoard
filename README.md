@@ -1,40 +1,61 @@
 # FlawdBoard
 
-A modern, AI-powered personal expense tracker dashboard built with vanilla JavaScript, Tailwind CSS, and Chart.js.
+## Overview
+FlawdBoard is a modern, AI-powered personal expense tracker dashboard. It combines sleek glassmorphism design with powerful financial analytics and an integrated AI assistant.
 
 ## Features
 
-- 📊 **Interactive Visualizations**: Donut, bar, and line charts for spending analysis
-- 💰 **Budget Management**: Set monthly budgets per category with real-time tracking
-- 🤖 **AI Assistant**: Chat with an AI financial advisor about your spending patterns
-- 📱 **Responsive Design**: Beautiful glassmorphism UI with dark mode
-- 💾 **Local Storage**: All data persists in your browser
-- ⚡ **Real-time Alerts**: Overspending notifications
-- 🎨 **Trifect Branding**: Custom brand colors and typography
+### 1. **Interactive Dashboard**
+- **Visual Analytics**: Real-time donut, bar, and line charts powered by Chart.js.
+- **Budget Tracking**: Set monthly budgets per category and track spending against them.
+- **Transaction Management**: Add, view, filter, and delete transactions.
+- **Overspending Alerts**: Automatic notifications when category budgets are exceeded.
 
-## Getting Started
+### 2. **Account Management**
+- **Flexible Accounts**: Add any bank, wallet, or cash account.
+- **Edit/Delete**: Rename accounts (migrates old transactions!) or remove unused ones.
+- **Dynamic**: All dropdowns and filters update automatically.
 
-1. Clone the repository
-2. Open `expense-tracker.html` in your browser, or run a local server:
-   ```bash
-   npx http-server -p 8080
-   ```
-3. Start tracking your expenses!
+### 3. **AI Financial Assistant**
+- **Context-Aware Chat**: The AI knows your current transactions and budgets.
+- **Smart Analysis**: Ask questions like "How can I save more on food?" or "Analyze my spending trends."
+- **Secure Integration**: Your OpenAI API key is stored locally in your browser.
 
-## AI Chat Setup
+### 4. **Modern UI/UX**
+- **Glassmorphism Design**: Premium aesthetic with dark mode and vibrant colors.
+- **Micro-Interactions**: Smooth animations, hover effects, and transitions.
+- **Responsive**: Works beautifully on desktop and mobile.
 
-To use the AI financial assistant:
-1. Click the chat button in the bottom-right corner
-2. Click the settings icon and enter your OpenAI API key
-3. Ask questions about your spending, budgets, and trends
+### 5. **GitHub Integration**
+- **Repository**: Published to [FlawdBoard](https://github.com/chaparaaghav/FlawdBoard)
+- **Open Source**: MIT Licensed and ready for contributions.
 
-## Technologies
+### 6. **Custom Categories**
+- **Manage**: Create, view, delete, and **Edit** custom categories.
+- **Color Control**: Choose from 10 presets or enter a precise **Hex Code**.
+- **Smart Editing**: Renaming a category automatically updates all your past transactions.
+- **Dynamic**: Changes reflect instantly across budgets and transactions.
+- **Persistent**: Categories are saved to browser storage.
 
-- **Frontend**: HTML5, Tailwind CSS, Vanilla JavaScript
-- **Charts**: Chart.js
-- **AI**: OpenAI GPT-3.5 Turbo
-- **Currency**: Indian Rupees (₹)
+### 7. **Income Tracking**
+- **Dual Mode**: Easily toggle between Income and Expense transactions.
+- **Visual Distinction**: Income categories are excluded from spending charts and budgets.
+- **Net Balance**: Dashboard shows your true financial position (Income - Expenses).
 
-## License
+### 8. **Robust Reliability**
+- **Auto-Recovery**: Advanced error handling ensures your data loads safely on reload.
+- **Dynamic Charts**: Adding new categories instantly updates chart labels and colors.
 
-MIT License - feel free to use and modify!
+## Usage
+
+1. **Launch**: Open `index.html` in your browser (use a local server like `http-server` for best experience).
+2. **Add Data**: Use the "Add Transaction" button or "Budgets" button.
+3. **Chat**: Click the floating chat button and enter your OpenAI API key to start analyzing.
+
+## Project Structure
+- `index.html`: Single-file application containing all HTML, CSS, and JS.
+- `README.md`: Project documentation.
+- `.gitignore`: Git configuration.
+
+---
+*Built with ❤️ by Trifect Media*
