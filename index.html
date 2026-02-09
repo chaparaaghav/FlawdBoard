@@ -658,6 +658,15 @@
                     </select>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <button onclick="openModal('categoryModal'); renderCategoryList()"
+                        class="glass-card hover-scale glow-border icon-spin px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-brand-primary font-medium flex items-center gap-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        <span class="hidden xs:inline">Categories</span>
+                        <span class="xs:hidden">Cats</span>
+                    </button>
                     <button onclick="openModal('budgetModal')"
                         class="glass-card hover-scale glow-border icon-spin px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-brand-primary font-medium flex items-center gap-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -852,6 +861,54 @@
         </div>
     </div>
 
+    <!-- Category Modal -->
+    <div id="categoryModal"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 modal-backdrop">
+        <div class="glass-card rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden animate-slide-up">
+            <div class="flex items-center justify-between p-6 border-b border-white/10">
+                <h3 class="text-xl font-semibold gradient-text">Manage Categories</h3>
+                <button onclick="closeModal('categoryModal')" class="text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto scrollbar-thin max-h-[calc(80vh-80px)]">
+                <!-- Add New Category Form -->
+                <form id="addCategoryForm" onsubmit="handleAddCategory(event)"
+                    class="mb-8 p-4 bg-white/5 rounded-xl border border-white/10">
+                    <h4 class="text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">Add New Category</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <input type="text" id="newCatName" placeholder="Category Name" required
+                                class="w-full glass-input rounded-xl px-4 py-2 text-white focus:outline-none text-sm">
+                        </div>
+                        <div>
+                            <input type="text" id="newCatSub" placeholder="Sub-categories (comma separated)"
+                                class="w-full glass-input rounded-xl px-4 py-2 text-white focus:outline-none text-sm">
+                        </div>
+                        <div class="flex gap-3">
+                            <input type="color" id="newCatColor" value="#b11f29"
+                                class="h-10 w-16 rounded cursor-pointer bg-transparent border-none">
+                            <button type="submit"
+                                class="flex-1 bg-brand-primary hover:bg-red-700 py-2 rounded-xl text-sm font-medium transition-all hover-scale btn-ripple text-white">
+                                Add Category
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Existing Categories List -->
+                <h4 class="text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">Existing Categories</h4>
+                <div id="categoryList" class="space-y-3">
+                    <!-- Dynamic List -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- AI Chat Widget -->
     <div class="chat-widget">
         <!-- Chat Window -->
@@ -951,7 +1008,8 @@
 
     <script>
         // Category Configuration with vibrant colors
-        const CATEGORIES = {
+        // Category Configuration (Loaded from Storage or Default)
+        const DEFAULT_CATEGORIES = {
             'Food & Dining': {
                 color: '#f472b6',
                 gradient: 'from-pink-500 to-rose-500',
@@ -984,6 +1042,8 @@
             }
         };
 
+        let CATEGORIES = {};
+
         // State
         let transactions = [];
         let budgets = {};
@@ -1004,6 +1064,14 @@
         function loadData() {
             const savedTransactions = localStorage.getItem('expenseTracker_transactions');
             const savedBudgets = localStorage.getItem('expenseTracker_budgets');
+            const savedCategories = localStorage.getItem('expenseTracker_categories');
+
+            if (savedCategories) {
+                CATEGORIES = JSON.parse(savedCategories);
+            } else {
+                CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+                saveCategories();
+            }
 
             if (savedTransactions) {
                 transactions = JSON.parse(savedTransactions);
@@ -1016,6 +1084,67 @@
             } else {
                 initDefaultBudgets();
             }
+        }
+
+        function saveCategories() {
+            localStorage.setItem('expenseTracker_categories', JSON.stringify(CATEGORIES));
+        }
+
+        function handleAddCategory(e) {
+            e.preventDefault();
+            const name = document.getElementById('newCatName').value.trim();
+            const sub = document.getElementById('newCatSub').value.trim();
+            const color = document.getElementById('newCatColor').value;
+
+            if (!name) return;
+            if (CATEGORIES[name]) {
+                alert('Category already exists!');
+                return;
+            }
+
+            const subCategories = sub ? sub.split(',').map(s => s.trim()).filter(s => s) : ['General'];
+
+            CATEGORIES[name] = {
+                color: color,
+                gradient: `from-[${color}] to-[${color}]`, // Simple gradient fallback
+                subCategories: subCategories
+            };
+
+            saveCategories();
+            renderCategoryList();
+            populateCategorySelects();
+            renderAll();
+            document.getElementById('addCategoryForm').reset();
+        }
+
+        function deleteCategory(name) {
+            if (confirm(`Delete category "${name}"? Transactions will effectively be orphaned.`)) {
+                delete CATEGORIES[name];
+                saveCategories();
+                renderCategoryList();
+                populateCategorySelects();
+                renderAll();
+            }
+        }
+
+        function renderCategoryList() {
+            const list = document.getElementById('categoryList');
+            list.innerHTML = Object.entries(CATEGORIES).map(([name, data]) => `
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-4 h-4 rounded-full" style="background-color: ${data.color}"></div>
+                        <div>
+                            <p class="font-medium text-white text-sm">${name}</p>
+                            <p class="text-xs text-gray-500">${data.subCategories.length} sub-categories</p>
+                        </div>
+                    </div>
+                    <button onclick="deleteCategory('${name}')" class="text-gray-500 hover:text-red-500 p-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
         }
 
         function saveData() {
