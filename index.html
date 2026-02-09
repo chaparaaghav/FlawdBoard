@@ -457,9 +457,22 @@
         /* Chat Widget Styles */
         .chat-widget {
             position: fixed;
-            bottom: 2rem;
-            right: 2rem;
+            bottom: 1rem;
+            right: 1rem;
             z-index: 50;
+        }
+
+        @media (max-width: 640px) {
+            .chat-widget {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .chat-window {
+                width: calc(100vw - 2rem) !important;
+                max-width: 380px;
+                right: -1rem !important;
+            }
         }
 
         .chat-button {
@@ -628,34 +641,41 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <header class="mb-8 animate-fade-in">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <h1 class="flex items-center gap-4">
-                        <img src="Trifect%20Media%20logo.png" alt="Trifect Media" class="h-10 w-auto object-contain">
-                        <span class="text-3xl sm:text-4xl font-bold gradient-text">Expense Tracker</span>
-                    </h1>
-                    <p class="text-brand-text/70 mt-1">Monitor your spending & stay on budget</p>
-                </div>
-                <div class="flex items-center gap-3">
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="flex-1">
+                        <h1 class="flex items-center gap-3 flex-wrap">
+                            <img src="Trifect%20Media%20logo.png" alt="Trifect Media"
+                                class="h-8 sm:h-10 w-auto object-contain">
+                            <span class="text-2xl sm:text-3xl lg:text-4xl font-bold gradient-text">Expense
+                                Tracker</span>
+                        </h1>
+                        <p class="text-brand-text/70 mt-1 text-sm sm:text-base">Monitor your spending & stay on budget
+                        </p>
+                    </div>
                     <select id="monthSelect" onchange="changeMonth()"
-                        class="glass-input rounded-xl px-4 py-2.5 text-white focus:outline-none cursor-pointer bg-[#171717] border border-white/10">
+                        class="glass-input rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base text-white focus:outline-none cursor-pointer bg-[#171717] border border-white/10 w-full sm:w-auto">
                     </select>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                     <button onclick="openModal('budgetModal')"
-                        class="glass-card hover-scale glow-border icon-spin px-4 py-2.5 rounded-xl text-brand-primary font-medium flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="glass-card hover-scale glow-border icon-spin px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-brand-primary font-medium flex items-center gap-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        Budgets
+                        <span class="hidden xs:inline">Budgets</span>
+                        <span class="xs:hidden">Budget</span>
                     </button>
                     <button onclick="openModal('transactionModal')"
-                        class="bg-brand-primary hover:bg-red-700 px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all hover-scale btn-ripple glow-border text-white">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="bg-brand-primary hover:bg-red-700 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all hover-scale btn-ripple glow-border text-white text-sm sm:text-base flex-1 sm:flex-initial justify-center whitespace-nowrap">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
-                        Add Transaction
+                        <span class="hidden xs:inline">Add Transaction</span>
+                        <span class="xs:hidden">Add</span>
                     </button>
                 </div>
             </div>
