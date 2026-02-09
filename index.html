@@ -1844,8 +1844,12 @@
             let expense = 0;
 
             monthTransactions.forEach(t => {
-                if (t.type === 'income') income += t.amount;
-                else expense += t.amount; // Assume expense if undefined
+                // Determine type: check transaction.type first, then category.type as fallback
+                const categoryData = CATEGORIES[t.category];
+                const txType = t.type || (categoryData && categoryData.type) || 'expense';
+
+                if (txType === 'income') income += t.amount;
+                else expense += t.amount;
             });
 
             // Update Summary Cards
@@ -1947,11 +1951,13 @@
 
             noData.classList.add('hidden');
             tbody.innerHTML = filtered.map((t, index) => {
-                const isIncome = t.type === 'income';
-                const sign = isIncome ? '+' : '-';
-                const amountColor = isIncome ? 'text-emerald-400' : 'text-brand-text';
                 const catData = CATEGORIES[t.category];
                 const catColor = catData ? catData.color : '#888';
+                // Infer type from category if not set on transaction
+                const txType = t.type || (catData && catData.type) || 'expense';
+                const isIncome = txType === 'income';
+                const sign = isIncome ? '+' : '-';
+                const amountColor = isIncome ? 'text-emerald-400' : 'text-brand-text';
 
                 return `
                 <tr class="border-b border-white/5 table-row-hover animate-fade-in stagger-${Math.min(index + 1, 6)}">
