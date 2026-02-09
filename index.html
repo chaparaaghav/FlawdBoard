@@ -1326,49 +1326,82 @@
 
         // Data Management
         function loadData() {
-            const savedTransactions = localStorage.getItem('expenseTracker_transactions');
-            const savedBudgets = localStorage.getItem('expenseTracker_budgets');
-            const savedCategories = localStorage.getItem('expenseTracker_categories');
-            const savedAccounts = localStorage.getItem('expenseTracker_accounts');
+            try {
+                const savedTransactions = localStorage.getItem('expenseTracker_transactions');
+                const savedBudgets = localStorage.getItem('expenseTracker_budgets');
+                const savedCategories = localStorage.getItem('expenseTracker_categories');
+                const savedAccounts = localStorage.getItem('expenseTracker_accounts');
 
-            if (savedCategories) {
-                CATEGORIES = JSON.parse(savedCategories);
-                // Migration: Ensure type exists for old categories
-                Object.values(CATEGORIES).forEach(c => {
-                    if (!c.type) c.type = 'expense';
-                });
+                if (savedCategories) {
+                    try {
+                        CATEGORIES = JSON.parse(savedCategories);
+                        // Migration: Ensure type exists for old categories
+                        Object.values(CATEGORIES).forEach(c => {
+                            if (!c.type) c.type = 'expense';
+                        });
 
-                // Ensure income categories exist - add them if missing
-                const incomeCategories = Object.keys(DEFAULT_INCOME_CATEGORIES);
-                const hasIncomeCategories = incomeCategories.some(cat => CATEGORIES[cat]);
+                        // Ensure income categories exist - add them if missing
+                        const incomeCategories = Object.keys(DEFAULT_INCOME_CATEGORIES);
+                        const hasIncomeCategories = incomeCategories.some(cat => CATEGORIES[cat]);
 
-                if (!hasIncomeCategories) {
-                    // No income categories found, merge them in
+                        if (!hasIncomeCategories) {
+                            Object.assign(CATEGORIES, JSON.parse(JSON.stringify(DEFAULT_INCOME_CATEGORIES)));
+                            saveCategories();
+                        }
+                    } catch (e) {
+                        console.error('Error parsing categories:', e);
+                        // Fallback to default
+                        CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+                        Object.assign(CATEGORIES, JSON.parse(JSON.stringify(DEFAULT_INCOME_CATEGORIES)));
+                        saveCategories();
+                    }
+                } else {
+                    CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
                     Object.assign(CATEGORIES, JSON.parse(JSON.stringify(DEFAULT_INCOME_CATEGORIES)));
-                    saveCategories(); // Save the updated categories
+                    saveCategories();
                 }
-            } else {
-                CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
-                // Merge Income Defaults
-                Object.assign(CATEGORIES, JSON.parse(JSON.stringify(DEFAULT_INCOME_CATEGORIES)));
-                saveCategories();
-            }
 
-            if (savedAccounts) {
-                ACCOUNTS = JSON.parse(savedAccounts);
-            } else {
-                saveAccounts(); // Save default
-            }
+                if (savedAccounts) {
+                    try {
+                        ACCOUNTS = JSON.parse(savedAccounts);
+                    } catch (e) {
+                        console.error('Error parsing accounts:', e);
+                        saveAccounts(); // Re-save defaults
+                    }
+                } else {
+                    saveAccounts();
+                }
 
-            if (savedTransactions) {
-                transactions = JSON.parse(savedTransactions);
-            } else {
+                if (savedTransactions) {
+                    try {
+                        transactions = JSON.parse(savedTransactions);
+                        // Ensure it's an array
+                        if (!Array.isArray(transactions)) transactions = [];
+                    } catch (e) {
+                        console.error('Error parsing transactions:', e);
+                        // Recover by resetting or keeping empty? 
+                        // Safer to keep empty or load sample if confirmed corruption. 
+                        // Let's load sample if it fails, to show something.
+                        loadSampleData();
+                    }
+                } else {
+                    loadSampleData();
+                }
+
+                if (savedBudgets) {
+                    try {
+                        budgets = JSON.parse(savedBudgets);
+                    } catch (e) {
+                        console.error('Error parsing budgets:', e);
+                        initDefaultBudgets(); // Re-initialize defaults
+                    }
+                } else {
+                    initDefaultBudgets();
+                }
+            } catch (error) {
+                console.error('Critical error loading data:', error);
+                // Last resort fallback
                 loadSampleData();
-            }
-
-            if (savedBudgets) {
-                budgets = JSON.parse(savedBudgets);
-            } else {
                 initDefaultBudgets();
             }
         }
@@ -2073,21 +2106,35 @@
         }
 
         function updateCharts() {
+            // Filter for expense categories only
+            const expenseCategories = Object.entries(CATEGORIES)
+                .filter(([_, data]) => data.type !== 'income')
+                .reduce((acc, [name, data]) => ({ ...acc, [name]: data }), {});
+
+            const labels = Object.keys(expenseCategories);
+            const colors = Object.values(expenseCategories).map(c => c.color);
+
             const spending = getMonthlySpending(selectedMonth);
-            const spendingValues = Object.keys(CATEGORIES).map(cat => spending[cat] || 0);
-            const budgetValues = Object.keys(CATEGORIES).map(cat => budgets[cat] || 0);
+            // Map spending to the filtered labels
+            const spendingValues = labels.map(cat => spending[cat] || 0);
+            const budgetValues = labels.map(cat => budgets[cat] || 0);
             const totalSpent = spendingValues.reduce((a, b) => a + b, 0);
 
             // Update donut chart
+            donutChart.data.labels = labels;
             donutChart.data.datasets[0].data = spendingValues;
+            donutChart.data.datasets[0].backgroundColor = colors;
             donutChart.update();
+
             document.getElementById('donutCenter').innerHTML = `
                 <p class="text-3xl font-bold gradient-text">₹${totalSpent.toFixed(0)}</p>
                 <p class="text-brand-text/60 text-sm">Total Spent</p>
             `;
 
             // Update bar chart
+            barChart.data.labels = labels.map(c => c.split(' ')[0]);
             barChart.data.datasets[0].data = spendingValues;
+            barChart.data.datasets[0].backgroundColor = colors;
             barChart.data.datasets[1].data = budgetValues;
             barChart.update();
 
@@ -2149,8 +2196,16 @@
             });
         });
         // Initialize
-        initCharts();
+        // Initialize
+        // Load data FIRST, then init charts
         loadData();
+        initCharts();
+
+        // Initial Render
+        renderCategoryList();
+        populateMonthSelect();
+        populateCategorySelects();
+        renderAll();
 
         // AI Chat Logic
         let apiKey = localStorage.getItem('openai_api_key');
