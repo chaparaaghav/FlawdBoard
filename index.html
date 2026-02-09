@@ -1333,10 +1333,20 @@
 
             if (savedCategories) {
                 CATEGORIES = JSON.parse(savedCategories);
-                // Migration: Ensure type exists
+                // Migration: Ensure type exists for old categories
                 Object.values(CATEGORIES).forEach(c => {
                     if (!c.type) c.type = 'expense';
                 });
+
+                // Ensure income categories exist - add them if missing
+                const incomeCategories = Object.keys(DEFAULT_INCOME_CATEGORIES);
+                const hasIncomeCategories = incomeCategories.some(cat => CATEGORIES[cat]);
+
+                if (!hasIncomeCategories) {
+                    // No income categories found, merge them in
+                    Object.assign(CATEGORIES, JSON.parse(JSON.stringify(DEFAULT_INCOME_CATEGORIES)));
+                    saveCategories(); // Save the updated categories
+                }
             } else {
                 CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
                 // Merge Income Defaults
