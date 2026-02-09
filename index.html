@@ -1572,8 +1572,11 @@
         }
 
         function initDefaultBudgets() {
-            Object.keys(CATEGORIES).forEach(cat => {
-                budgets[cat] = 200;
+            Object.entries(CATEGORIES).forEach(([cat, data]) => {
+                // Only create budgets for expense categories
+                if (data.type !== 'income') {
+                    budgets[cat] = 200;
+                }
             });
             saveData();
         }
@@ -1744,7 +1747,10 @@
             const container = document.getElementById('budgetInputs');
             container.innerHTML = '';
 
-            Object.keys(CATEGORIES).forEach(cat => {
+            Object.entries(CATEGORIES).forEach(([cat, data]) => {
+                // Only show expense categories for budgets
+                if (data.type === 'income') return;
+
                 const div = document.createElement('div');
                 div.className = 'flex items-center gap-4';
                 div.innerHTML = `
@@ -1773,13 +1779,19 @@
             closeModal('budgetModal');
         }
 
-        // Calculate spending for a specific month
+        // Calculate spending for a specific month (EXPENSES ONLY)
         function getMonthlySpending(month) {
             const spending = {};
-            Object.keys(CATEGORIES).forEach(cat => spending[cat] = 0);
+            // Only initialize expense categories
+            Object.entries(CATEGORIES).forEach(([cat, data]) => {
+                if (data.type !== 'income') {
+                    spending[cat] = 0;
+                }
+            });
 
             transactions
                 .filter(t => t.date.startsWith(month))
+                .filter(t => (t.type || 'expense') !== 'income') // Filter out income transactions
                 .forEach(t => {
                     if (spending[t.category] !== undefined) {
                         spending[t.category] += t.amount;
@@ -1938,15 +1950,20 @@
             Chart.defaults.color = 'rgba(255,255,255,0.6)';
             Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
 
+            // Get expense categories only for charts
+            const expenseCategories = Object.entries(CATEGORIES)
+                .filter(([_, data]) => data.type !== 'income')
+                .reduce((acc, [name, data]) => ({ ...acc, [name]: data }), {});
+
             // Donut Chart
             const donutCtx = document.getElementById('donutChart').getContext('2d');
             donutChart = new Chart(donutCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(CATEGORIES),
+                    labels: Object.keys(expenseCategories),
                     datasets: [{
                         data: [],
-                        backgroundColor: Object.values(CATEGORIES).map(c => c.color),
+                        backgroundColor: Object.values(expenseCategories).map(c => c.color),
                         borderWidth: 0,
                         hoverOffset: 10
                     }]
@@ -1973,12 +1990,12 @@
             barChart = new Chart(barCtx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(CATEGORIES).map(c => c.split(' ')[0]),
+                    labels: Object.keys(expenseCategories).map(c => c.split(' ')[0]),
                     datasets: [
                         {
                             label: 'Actual',
                             data: [],
-                            backgroundColor: Object.values(CATEGORIES).map(c => c.color),
+                            backgroundColor: Object.values(expenseCategories).map(c => c.color),
                             borderRadius: 6,
                             barThickness: 20
                         },
