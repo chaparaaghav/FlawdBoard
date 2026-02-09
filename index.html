@@ -707,19 +707,65 @@
             </div>
         </section>
 
-        <!-- Summary Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 animate-slide-up" style="animation-delay: 0.1s;">
-            <div class="glass-card p-4 rounded-2xl border-l-4 border-blue-500">
-                <p class="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Total Balance</p>
-                <h3 class="text-2xl font-bold text-white" id="totalBalance">₹0</h3>
+        <!-- Summary Cards with Sparklines -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-slide-up" style="animation-delay: 0.1s;">
+            <!-- Balance Card -->
+            <div class="glass-card p-6 rounded-2xl relative overflow-hidden group hover-scale border border-white/5">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Total Balance</p>
+                        <h3 class="text-3xl font-bold text-white mt-1" id="totalBalance">₹0</h3>
+                    </div>
+                    <div class="p-3 bg-blue-500/10 rounded-xl text-blue-400 border border-blue-500/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+                <!-- Sparkline -->
+                <div class="relative h-16 w-full mask-linear-fade">
+                    <canvas id="balanceSparkline"></canvas>
+                </div>
             </div>
-            <div class="glass-card p-4 rounded-2xl border-l-4 border-emerald-500">
-                <p class="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Total Income</p>
-                <h3 class="text-2xl font-bold text-emerald-400" id="totalIncome">₹0</h3>
+
+            <!-- Income Card -->
+            <div class="glass-card p-6 rounded-2xl relative overflow-hidden group hover-scale border border-white/5">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Total Income</p>
+                        <h3 class="text-3xl font-bold text-emerald-400 mt-1" id="totalIncome">₹0</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-400 border border-emerald-500/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="relative h-16 w-full">
+                    <canvas id="incomeSparkline"></canvas>
+                </div>
             </div>
-            <div class="glass-card p-4 rounded-2xl border-l-4 border-rose-500">
-                <p class="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Total Expenses</p>
-                <h3 class="text-2xl font-bold text-rose-400" id="totalExpenseSummary">₹0</h3>
+
+            <!-- Expenses Card -->
+            <div class="glass-card p-6 rounded-2xl relative overflow-hidden group hover-scale border border-white/5">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Total Expenses</p>
+                        <h3 class="text-3xl font-bold text-rose-400 mt-1" id="totalExpenseSummary">₹0</h3>
+                    </div>
+                    <div class="p-3 bg-rose-500/10 rounded-xl text-rose-400 border border-rose-500/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="relative h-16 w-full">
+                    <canvas id="expenseSparkline"></canvas>
+                </div>
             </div>
         </div>
 
@@ -1199,7 +1245,7 @@
         let transactions = [];
         let budgets = {};
         let selectedMonth = new Date().toISOString().slice(0, 7);
-        let donutChart, barChart, lineChart;
+        let donutChart, barChart, lineChart, balanceSparkline, incomeSparkline, expenseSparkline;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -1208,6 +1254,7 @@
             populateCategorySelects();
             populateAccountSelects();
             initCharts();
+            initSparklines();
             renderAll();
             setDefaultDate();
         });
@@ -1881,7 +1928,20 @@
             setVal('totalIncome', totalIncome);
             setVal('totalExpenseSummary', totalExpense);
 
-            // Update Donut Center
+            // Update Sparklines
+            const updateSpark = (chart, data) => {
+                if (!chart) return;
+                chart.data.labels = data.map((_, i) => i + 1); // Simple index labels
+                chart.data.datasets[0].data = data;
+                chart.update('none'); // Efficient update
+            };
+
+            const month = document.getElementById('monthSelect').value;
+            if (balanceSparkline) {
+                updateSpark(balanceSparkline, getDailyHistory(month, 'balance'));
+                updateSpark(incomeSparkline, getDailyHistory(month, 'income'));
+                updateSpark(expenseSparkline, getDailyHistory(month, 'expense'));
+            }
             setVal('donutCenter', totalExpense);
         }
 
@@ -1982,6 +2042,78 @@
                     </td>
                 </tr>
             `}).join('');
+        }
+
+        // Sparklines Initialization
+        function initSparklines() {
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                scales: { x: { display: false }, y: { display: false } },
+                elements: { point: { radius: 0 }, line: { borderWidth: 2, tension: 0.4 } },
+                layout: { padding: 0 },
+                animation: { duration: 1000, easing: 'easeOutQuart' }
+            };
+
+            const createSparkline = (id, color) => {
+                const ctx = document.getElementById(id);
+                if (!ctx) return null;
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ data: [], borderColor: color, backgroundColor: color + '20', fill: true }] },
+                    options: commonOptions
+                });
+            };
+
+            balanceSparkline = createSparkline('balanceSparkline', '#3b82f6');
+            incomeSparkline = createSparkline('incomeSparkline', '#10b981');
+            expenseSparkline = createSparkline('expenseSparkline', '#f43f5e');
+        }
+
+        function getDailyHistory(month, type) {
+            const [year, mon] = month.split('-').map(Number);
+            const daysInMonth = new Date(year, mon, 0).getDate();
+            const history = new Array(daysInMonth).fill(0);
+
+            // Get transactions for this month
+            const monthTx = transactions.filter(t => t.date.startsWith(month));
+
+            if (type === 'balance') {
+                let runningBalance = 0;
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dayStr = `${month}-${String(i).padStart(2, '0')}`;
+                    const dayTx = monthTx.filter(t => t.date === dayStr);
+
+                    const dayIncome = dayTx.filter(t => {
+                        const tType = t.type || CATEGORIES[t.category]?.type || 'expense';
+                        return tType === 'income';
+                    }).reduce((sum, t) => sum + t.amount, 0);
+
+                    const dayExpense = dayTx.filter(t => {
+                        const tType = t.type || CATEGORIES[t.category]?.type || 'expense';
+                        return tType !== 'income';
+                    }).reduce((sum, t) => sum + t.amount, 0);
+
+                    runningBalance += (dayIncome - dayExpense);
+                    history[i - 1] = runningBalance;
+                }
+            } else {
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dayStr = `${month}-${String(i).padStart(2, '0')}`;
+                    const dayTx = monthTx.filter(t => t.date === dayStr);
+
+                    const total = dayTx
+                        .filter(t => {
+                            const tType = t.type || CATEGORIES[t.category]?.type || 'expense';
+                            return type === 'income' ? tType === 'income' : tType !== 'income';
+                        })
+                        .reduce((sum, t) => sum + t.amount, 0);
+
+                    history[i - 1] = total;
+                }
+            }
+            return history;
         }
 
         // Charts

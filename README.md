@@ -1,4 +1,4 @@
-# FlawdBoard
+# FlawdBoard Walkthrough
 
 ## Overview
 FlawdBoard is a modern, AI-powered personal expense tracker dashboard. It combines sleek glassmorphism design with powerful financial analytics and an integrated AI assistant.
@@ -46,14 +46,20 @@ FlawdBoard is a modern, AI-powered personal expense tracker dashboard. It combin
 - **Auto-Recovery**: Advanced error handling ensures your data loads safely on reload.
 - **Dynamic Charts**: Adding new categories instantly updates chart labels and colors.
 
+### 9. **UI Improvements**
+- **Redesigned Summary Cards**: Replaced simple text cards with a premium design featuring:
+  - **Icons**: Visual indicators for Balance, Income, and Expenses.
+  - **Sparklines**: Mini-charts showing daily trends for the selected month to provide at-a-glance insights.
+  - **Glassmorphism**: Enhanced visual depth and style consistent with the application theme.
+
 ## Usage
 
-1. **Launch**: Open `index.html` in your browser (use a local server like `http-server` for best experience).
+1. **Launch**: Open `http://localhost:8080/expense-tracker.html` in your browser.
 2. **Add Data**: Use the "Add Transaction" button or "Budgets" button.
 3. **Chat**: Click the floating chat button and enter your OpenAI API key to start analyzing.
 
 ## Project Structure
-- `index.html`: Single-file application containing all HTML, CSS, and JS.
+- `expense-tracker.html`: Single-file application containing all HTML, CSS, and JS.
 - `README.md`: Project documentation.
 - `.gitignore`: Git configuration.
 
