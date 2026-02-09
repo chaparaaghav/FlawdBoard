@@ -1167,25 +1167,25 @@
             'Salary': {
                 color: '#22c55e',
                 gradient: 'from-green-500 to-emerald-500',
-                subCategories: ['Full-time', 'Freelance', 'Bonus'],
+                subCategories: ['Monthly', 'Annual', 'Other'],
                 type: 'income'
             },
-            'Investments': {
+            'Bonus': {
                 color: '#06b6d4',
                 gradient: 'from-cyan-500 to-blue-500',
-                subCategories: ['Dividends', 'Interest', 'Capital Gains'],
+                subCategories: ['Performance', 'Annual', 'Other'],
                 type: 'income'
             },
-            'Gifts': {
+            'Invoice': {
                 color: '#d946ef',
                 gradient: 'from-fuchsia-500 to-pink-500',
-                subCategories: ['Birthday', 'Holiday'],
+                subCategories: ['Client Payment', 'Project', 'Other'],
                 type: 'income'
             },
-            'Other Income': {
+            'Gift': {
                 color: '#a8a29e',
                 gradient: 'from-stone-500 to-gray-500',
-                subCategories: ['Refunds', 'Sales'],
+                subCategories: ['Birthday', 'Holiday', 'Other'],
                 type: 'income'
             }
         };
@@ -1595,17 +1595,34 @@
         function populateCategorySelects() {
             const txCategorySelect = document.getElementById('txCategory');
             const filterCategorySelect = document.getElementById('filterCategory');
+            const currentType = document.getElementById('txType') ? document.getElementById('txType').value : 'expense';
+
+            // Clear and rebuild txCategory (transaction form) - filter by type
+            const txPlaceholder = txCategorySelect.options[0].cloneNode(true);
+            txCategorySelect.innerHTML = '';
+            txCategorySelect.appendChild(txPlaceholder);
+
+            Object.entries(CATEGORIES).forEach(([cat, data]) => {
+                const catType = data.type || 'expense';
+                // Only show categories matching the selected transaction type
+                if (catType === currentType) {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.textContent = cat;
+                    txCategorySelect.appendChild(option);
+                }
+            });
+
+            // Clear and rebuild filterCategory (show all categories)
+            const filterPlaceholder = filterCategorySelect.options[0].cloneNode(true);
+            filterCategorySelect.innerHTML = '';
+            filterCategorySelect.appendChild(filterPlaceholder);
 
             Object.keys(CATEGORIES).forEach(cat => {
-                const option1 = document.createElement('option');
-                option1.value = cat;
-                option1.textContent = cat;
-                txCategorySelect.appendChild(option1);
-
-                const option2 = document.createElement('option');
-                option2.value = cat;
-                option2.textContent = cat;
-                filterCategorySelect.appendChild(option2);
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                filterCategorySelect.appendChild(option);
             });
         }
 
