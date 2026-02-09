@@ -658,6 +658,15 @@
                     </select>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <button onclick="openModal('accountModal'); renderAccountList()"
+                        class="glass-card hover-scale glow-border icon-spin px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-brand-primary font-medium flex items-center gap-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <span class="hidden xs:inline">Accounts</span>
+                        <span class="xs:hidden">Accts</span>
+                    </button>
                     <button onclick="openModal('categoryModal'); renderCategoryList()"
                         class="glass-card hover-scale glow-border icon-spin px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-brand-primary font-medium flex items-center gap-2 text-sm sm:text-base flex-1 sm:flex-initial justify-center">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -738,9 +747,6 @@
                     <select id="filterAccount" onchange="renderTransactions()"
                         class="glass-input rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
                         <option value="">All Accounts</option>
-                        <option value="Bank 1">Bank 1</option>
-                        <option value="Bank 2">Bank 2</option>
-                        <option value="Cash">Cash</option>
                     </select>
                     <select id="filterCategory" onchange="renderTransactions()"
                         class="glass-input rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
@@ -806,9 +812,6 @@
                     <select id="txAccount" required
                         class="w-full glass-input rounded-xl px-4 py-3 text-white focus:outline-none">
                         <option value="">Select account</option>
-                        <option value="Bank 1">Bank 1</option>
-                        <option value="Bank 2">Bank 2</option>
-                        <option value="Cash">Cash</option>
                     </select>
                 </div>
                 <div>
@@ -857,6 +860,55 @@
                     class="w-full bg-brand-primary hover:bg-red-700 py-3 rounded-xl font-medium transition-all hover-scale btn-ripple text-white">
                     Save Budgets
                 </button>
+            </div>
+        </div>
+    </div>
+
+    </div>
+    </div>
+
+    <!-- Account Modal -->
+    <div id="accountModal"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 modal-backdrop">
+        <div class="glass-card rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden animate-slide-up">
+            <div class="flex items-center justify-between p-6 border-b border-white/10">
+                <h3 class="text-xl font-semibold gradient-text">Manage Accounts</h3>
+                <button onclick="closeModal('accountModal')" class="text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto scrollbar-thin max-h-[calc(80vh-80px)]">
+                <!-- Add/Edit Account Form -->
+                <form id="addAccountForm" onsubmit="handleAccountSubmit(event)"
+                    class="mb-8 p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 id="accountFormTitle" class="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                            Add New Account</h4>
+                        <button type="button" onclick="resetAccountForm()"
+                            class="text-xs text-brand-primary hover:text-white">Reset</button>
+                    </div>
+                    <input type="hidden" id="originalAccountName">
+                    <div class="space-y-4">
+                        <div>
+                            <input type="text" id="newAccountName" placeholder="Account Name (e.g. Chase Bank)" required
+                                class="w-full glass-input rounded-xl px-4 py-2 text-white focus:outline-none text-sm">
+                        </div>
+                        <button type="submit" id="saveAccountBtn"
+                            class="w-full bg-brand-primary hover:bg-red-700 py-2.5 rounded-xl text-sm font-medium transition-all hover-scale btn-ripple text-white mt-2">
+                            Add Account
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Existing Accounts List -->
+                <h4 class="text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">Existing Accounts</h4>
+                <div id="accountList" class="space-y-3">
+                    <!-- Dynamic List -->
+                </div>
             </div>
         </div>
     </div>
@@ -1071,6 +1123,9 @@
 
         let CATEGORIES = {};
 
+        // Accounts
+        let ACCOUNTS = ['Bank 1', 'Bank 2', 'Cash']; // Default
+
         // State
         let transactions = [];
         let budgets = {};
@@ -1082,22 +1137,142 @@
             loadData();
             populateMonthSelect();
             populateCategorySelects();
+            populateAccountSelects();
             initCharts();
             renderAll();
             setDefaultDate();
         });
+
+        // Account Logic
+        function populateAccountSelects() {
+            const selects = ['txAccount', 'filterAccount'];
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+
+                // Keep first option (placeholder)
+                const firstOption = select.options[0];
+                select.innerHTML = '';
+                select.appendChild(firstOption);
+
+                ACCOUNTS.forEach(acc => {
+                    const option = document.createElement('option');
+                    option.value = acc;
+                    option.textContent = acc;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function handleAccountSubmit(e) {
+            e.preventDefault();
+            const originalName = document.getElementById('originalAccountName').value;
+            const name = document.getElementById('newAccountName').value.trim();
+
+            if (!name) return;
+
+            // Check if exists
+            if (name !== originalName && ACCOUNTS.includes(name)) {
+                alert('Account name already exists!');
+                return;
+            }
+
+            if (originalName && originalName !== name) {
+                // Rename logic
+                if (confirm(`Rename account from "${originalName}" to "${name}"? This will update all associated transactions.`)) {
+                    // Update list
+                    const index = ACCOUNTS.indexOf(originalName);
+                    if (index !== -1) ACCOUNTS[index] = name;
+
+                    // Update transactions
+                    transactions.forEach(t => {
+                        if (t.account === originalName) t.account = name;
+                    });
+                } else {
+                    return;
+                }
+            } else if (!originalName) {
+                // Add new
+                ACCOUNTS.push(name);
+            }
+
+            saveData();
+            saveAccounts();
+
+            resetAccountForm();
+            renderAccountList();
+            populateAccountSelects();
+            renderAll();
+        }
+
+        function editAccount(name) {
+            document.getElementById('accountFormTitle').innerText = 'Edit Account';
+            document.getElementById('saveAccountBtn').innerText = 'Save Changes';
+            document.getElementById('originalAccountName').value = name;
+            document.getElementById('newAccountName').value = name;
+        }
+
+        function deleteAccount(name) {
+            if (confirm(`Delete account "${name}"? This might leave orphaned transactions.`)) {
+                ACCOUNTS = ACCOUNTS.filter(a => a !== name);
+                saveAccounts();
+                renderAccountList();
+                populateAccountSelects();
+                renderAll();
+            }
+        }
+
+        function resetAccountForm() {
+            document.getElementById('addAccountForm').reset();
+            document.getElementById('originalAccountName').value = '';
+            document.getElementById('accountFormTitle').innerText = 'Add New Account';
+            document.getElementById('saveAccountBtn').innerText = 'Add Account';
+        }
+
+        function renderAccountList() {
+            const list = document.getElementById('accountList');
+            list.innerHTML = ACCOUNTS.map(name => `
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 table-row-hover">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center border border-white/10">
+                            <span class="text-brand-primary text-xs font-bold">${name.substring(0, 2).toUpperCase()}</span>
+                        </div>
+                        <p class="font-medium text-white text-sm">${name}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                         <button onclick="editAccount('${name}')" class="text-gray-400 hover:text-brand-primary p-2 rounded-lg hover:bg-white/5 transition-colors" title="Edit">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </button>
+                        <button onclick="deleteAccount('${name}')" class="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-white/5 transition-colors" title="Delete">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
         // Data Management
         function loadData() {
             const savedTransactions = localStorage.getItem('expenseTracker_transactions');
             const savedBudgets = localStorage.getItem('expenseTracker_budgets');
             const savedCategories = localStorage.getItem('expenseTracker_categories');
+            const savedAccounts = localStorage.getItem('expenseTracker_accounts');
 
             if (savedCategories) {
                 CATEGORIES = JSON.parse(savedCategories);
             } else {
                 CATEGORIES = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
                 saveCategories();
+            }
+
+            if (savedAccounts) {
+                ACCOUNTS = JSON.parse(savedAccounts);
+            } else {
+                saveAccounts(); // Save default
             }
 
             if (savedTransactions) {
@@ -1115,6 +1290,10 @@
 
         function saveCategories() {
             localStorage.setItem('expenseTracker_categories', JSON.stringify(CATEGORIES));
+        }
+
+        function saveAccounts() {
+            localStorage.setItem('expenseTracker_accounts', JSON.stringify(ACCOUNTS));
         }
 
         const PRESET_COLORS = [
